@@ -1,19 +1,20 @@
 ================================================================================
 Projeto A3 – Mobilidade Urbana Sustentável
-Execução real em: 2026-11-18T23:27:49Z
+Execução real em: 2026-11-18T23:59:05Z
 Host: cursor
 MySQL: 8.0.46-0ubuntu0.24.04.5
+Seed: GTFS/OSM reais via scripts/importar_dados_reais.py
 ================================================================================
 
 ################################################################################
 # PASSO 1: sql/script_completo.sql (DROP/CREATE end-to-end)
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
-+-----------------+
-| status          |
-+-----------------+
-| Seed concluído  |
-+-----------------+
++-------------------------------------------+
+| status                                    |
++-------------------------------------------+
+| Seed concluído (dados reais + simulados)  |
++-------------------------------------------+
 +------------------+----+
 | tabela           | n  |
 +------------------+----+
@@ -21,11 +22,11 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 | modal_transporte |  8 |
 | fonte_referencia |  4 |
 | fator_emissao    |  9 |
-| local            | 12 |
-| segmento_via     |  5 |
-| sensor           |  5 |
-| leitura_trafego  | 11 |
-| linha_transporte |  6 |
+| local            | 60 |
+| segmento_via     | 10 |
+| sensor           | 10 |
+| leitura_trafego  | 28 |
+| linha_transporte | 18 |
 | viagem           |  7 |
 | trecho_viagem    |  8 |
 | trecho_segmento  |  9 |
@@ -39,11 +40,11 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +------------+----------------------+-------------+--------------------+-------------+
 | id_usuario | nome                 | qtd_viagens | distancia_total_km | co2_total_g |
 +------------+----------------------+-------------+--------------------+-------------+
-|          4 | Diego Mock Pereira   |           1 |             11.200 |    1344.000 |
-|          3 | Carla Demo Souza     |           1 |              9.100 |     728.000 |
-|          5 | Elena Sample Costa   |           1 |              8.400 |      25.200 |
-|          1 | Ana Fictícia Silva   |           1 |              9.700 |      19.500 |
-|          2 | Bruno Teste Oliveira |           1 |              7.800 |       0.000 |
+|          4 | Diego Mock Pereira   |           1 |              6.610 |     793.200 |
+|          3 | Carla Demo Souza     |           1 |              7.335 |     586.800 |
+|          5 | Elena Sample Costa   |           1 |              7.766 |      23.298 |
+|          1 | Ana Fictícia Silva   |           1 |              6.276 |       8.607 |
+|          2 | Bruno Teste Oliveira |           1 |              3.775 |       0.000 |
 +------------+----------------------+-------------+--------------------+-------------+
 +----------------------------+
 | relatorio                  |
@@ -53,11 +54,11 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +----------------+------------------------------+------------+-------------+--------------------+-------------+
 | codigo         | nome                         | categoria  | qtd_trechos | distancia_total_km | co2_total_g |
 +----------------+------------------------------+------------+-------------+--------------------+-------------+
-| CARRO_GASOLINA | Carro a gasolina             | individual |           1 |             11.200 |    1344.000 |
-| ONIBUS         | Ônibus municipal             | coletivo   |           1 |              9.100 |     728.000 |
-| METRO          | Metrô                        | coletivo   |           3 |             20.100 |      60.300 |
-| A_PE           | A pé                         | ativo      |           1 |              0.800 |       0.000 |
-| BICICLETA      | Bicicleta                    | ativo      |           2 |             11.000 |       0.000 |
+| CARRO_GASOLINA | Carro a gasolina             | individual |           1 |              6.610 |     793.200 |
+| ONIBUS         | Ônibus municipal             | coletivo   |           1 |              7.335 |     586.800 |
+| METRO          | Metrô                        | coletivo   |           3 |             14.768 |      44.304 |
+| A_PE           | A pé                         | ativo      |           1 |              1.166 |       0.000 |
+| BICICLETA      | Bicicleta                    | ativo      |           2 |              7.182 |       0.000 |
 | BIKE_ELETRICA  | Bicicleta/patinete elétrico  | ativo      |           0 |              0.000 |       0.000 |
 | TREM           | Trem metropolitano (CPTM)    | coletivo   |           0 |              0.000 |       0.000 |
 | MOTOCICLETA    | Motocicleta                  | individual |           0 |              0.000 |       0.000 |
@@ -67,16 +68,28 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +---------------------------------+
 | === 3) CO₂ por linha/rota ===   |
 +---------------------------------+
-+------------+---------------------------------------------------------+-----------+--------------+-------------+--------------------+-------------+
-| codigo     | nome                                                    | operadora | codigo_modal | qtd_trechos | distancia_total_km | co2_total_g |
-+------------+---------------------------------------------------------+-----------+--------------+-------------+--------------------+-------------+
-| 702U-10    | 702U-10 Term. Pq. D. Pedro II ↔ Butantã-USP             | SPTrans   | ONIBUS       |           1 |              9.100 |     728.000 |
-| L4-AMARELA | Linha 4-Amarela (Luz ↔ Vila Sônia)                      | ViaQuatro | METRO        |           1 |              8.400 |      25.200 |
-| L2-VERDE   | Linha 2-Verde (Vila Madalena ↔ Vila Prudente)           | Metrô-SP  | METRO        |           1 |              6.500 |      19.500 |
-| L1-AZUL    | Linha 1-Azul (Tucuruvi ↔ Jabaquara)                     | Metrô-SP  | METRO        |           1 |              5.200 |      15.600 |
-| 875A-10    | 875A-10 Aeroporto ↔ Metrô Barra Funda (FAKE-trajeto)    | SPTrans   | ONIBUS       |           0 |              0.000 |       0.000 |
-| CPT-7      | Linha 7-Rubi (Luz ↔ Francisco Morato)                   | CPTM      | TREM         |           0 |              0.000 |       0.000 |
-+------------+---------------------------------------------------------+-----------+--------------+-------------+--------------------+-------------+
++---------+----------------------------------------------------------------+---------------------------+--------------+-------------+--------------------+-------------+
+| codigo  | nome                                                           | operadora                 | codigo_modal | qtd_trechos | distancia_total_km | co2_total_g |
++---------+----------------------------------------------------------------+---------------------------+--------------+-------------+--------------------+-------------+
+| 702U-22 | Metrô Butantã - Term. Pq. D. Pedro Ii                          | SPTrans                   | ONIBUS       |           1 |              7.335 |     586.800 |
+| L4      | METRÔ L4 — SÃO PAULO - MORUMBI - LUZ                           | ViaQuatro / Metrô-SP      | METRO        |           1 |              7.766 |      23.298 |
+| L1      | METRÔ L1 — TUCURUVI - JABAQUARA                                | Metrô-SP                  | METRO        |           1 |              4.133 |      12.399 |
+| L2      | METRÔ L2 — VILA MADALENA - VILA PRUDENTE                       | Metrô-SP                  | METRO        |           1 |              2.869 |       8.607 |
+| L5      | METRÔ L5 — CAPAO REDONDO - CHÁCARA KLABIN                      | ViaMobilidade / Metrô-SP  | METRO        |           0 |              0.000 |       0.000 |
+| L07     | CPTM L07 — JUNDIAI - LUZ                                       | CPTM                      | TREM         |           0 |              0.000 |       0.000 |
+| L08     | CPTM L08 — AMADOR BUENO - JULIO PRESTES                        | CPTM                      | TREM         |           0 |              0.000 |       0.000 |
+| L09     | CPTM L09 — VARGINHA - OSASCO                                   | CPTM                      | TREM         |           0 |              0.000 |       0.000 |
+| 875A-10 | Aeroporto - Perdizes                                           | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| L3      | METRÔ L3 — CORINTHIANS - ITAQUERA - PALMEIRAS - BARRA FUNDA    | Metrô-SP                  | METRO        |           0 |              0.000 |       0.000 |
+| 177Y-10 | Metrô Barra Funda - Pinheiros                                  | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 917H-10 | Term. Pirituba - Metrô Vl. Mariana                             | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 675A-10 | Pq. Sto. Antonio - Metrô São Judas                             | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 509M-10 | Jd. Miriam - Term. Princ. Isabel                               | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 5154-10 | Term. Sto. Amaro - Term. Princ. Isabel                         | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 107T-10 | Metrô Tucuruvi - Term. Pinheiros                               | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 930P-10 | Term. Pq. D. Pedro Ii - Term. Pinheiros                        | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
+| 2002-10 | Term. Pq. D. Pedro Ii - Term. Bandeira                         | SPTrans                   | ONIBUS       |           0 |              0.000 |       0.000 |
++---------+----------------------------------------------------------------+---------------------------+--------------+-------------+--------------------+-------------+
 +-------------------------------------------+
 | relatorio                                 |
 +-------------------------------------------+
@@ -85,14 +98,14 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +-----------+----------------+--------------+--------------+----------------+---------------------+
 | id_viagem | codigo_modal   | distancia_km | co2_trecho_g | co2_se_carro_g | economia_vs_carro_g |
 +-----------+----------------+--------------+--------------+----------------+---------------------+
-|         5 | METRO          |        8.400 |       25.200 |       1008.000 |             982.800 |
-|         2 | BICICLETA      |        7.800 |        0.000 |        936.000 |             936.000 |
-|         1 | METRO          |        6.500 |       19.500 |        780.000 |             760.500 |
-|         6 | METRO          |        5.200 |       15.600 |        624.000 |             608.400 |
-|         1 | BICICLETA      |        3.200 |        0.000 |        384.000 |             384.000 |
-|         3 | ONIBUS         |        9.100 |      728.000 |       1092.000 |             364.000 |
-|         6 | A_PE           |        0.800 |        0.000 |         96.000 |              96.000 |
-|         4 | CARRO_GASOLINA |       11.200 |     1344.000 |       1344.000 |               0.000 |
+|         5 | METRO          |        7.766 |       23.298 |        931.920 |             908.622 |
+|         6 | METRO          |        4.133 |       12.399 |        495.960 |             483.561 |
+|         2 | BICICLETA      |        3.775 |        0.000 |        453.000 |             453.000 |
+|         1 | BICICLETA      |        3.407 |        0.000 |        408.840 |             408.840 |
+|         1 | METRO          |        2.869 |        8.607 |        344.280 |             335.673 |
+|         3 | ONIBUS         |        7.335 |      586.800 |        880.200 |             293.400 |
+|         6 | A_PE           |        1.166 |        0.000 |        139.920 |             139.920 |
+|         4 | CARRO_GASOLINA |        6.610 |      793.200 |        793.200 |               0.000 |
 +-----------+----------------+--------------+--------------+----------------+---------------------+
 +-----------------------------------------+
 | relatorio                               |
@@ -102,25 +115,30 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +------------+----------------------+---------+-------------+--------------+---------------+----------------+---------------------+
 | id_usuario | nome_usuario         | ano_mes | qtd_viagens | distancia_km | co2_emitido_g | co2_se_carro_g | economia_vs_carro_g |
 +------------+----------------------+---------+-------------+--------------+---------------+----------------+---------------------+
-|          1 | Ana Fictícia Silva   | 2026-11 |           1 |        9.700 |        19.500 |       1164.000 |            1144.500 |
-|          5 | Elena Sample Costa   | 2026-11 |           1 |        8.400 |        25.200 |       1008.000 |             982.800 |
-|          2 | Bruno Teste Oliveira | 2026-11 |           1 |        7.800 |         0.000 |        936.000 |             936.000 |
-|          3 | Carla Demo Souza     | 2026-11 |           1 |        9.100 |       728.000 |       1092.000 |             364.000 |
-|          4 | Diego Mock Pereira   | 2026-11 |           1 |       11.200 |      1344.000 |       1344.000 |               0.000 |
+|          5 | Elena Sample Costa   | 2026-11 |           1 |        7.766 |        23.298 |        931.920 |             908.622 |
+|          1 | Ana Fictícia Silva   | 2026-11 |           1 |        6.276 |         8.607 |        753.120 |             744.513 |
+|          2 | Bruno Teste Oliveira | 2026-11 |           1 |        3.775 |         0.000 |        453.000 |             453.000 |
+|          3 | Carla Demo Souza     | 2026-11 |           1 |        7.335 |       586.800 |        880.200 |             293.400 |
+|          4 | Diego Mock Pereira   | 2026-11 |           1 |        6.610 |       793.200 |        793.200 |               0.000 |
 +------------+----------------------+---------+-------------+--------------+---------------+----------------+---------------------+
 +----------------------------------------------+
 | relatorio                                    |
 +----------------------------------------------+
 | === 6) Ranking de congestionamento atual === |
 +----------------------------------------------+
-+-------------+--------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
-| id_segmento | nome_via                                   | nivel_congestionamento | velocidade_media_kmh | volume_veiculos | registrado_em           | possui_ciclovia | faixa_onibus |
-+-------------+--------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
-|           4 | Rua da Consolação                          |                      3 |                 15.5 |             160 | 2026-11-18 12:00:00.000 |               1 |            0 |
-|           1 | Av. Paulista (Consolação → Brigadeiro)     |                      3 |                 22.0 |             380 | 2026-11-18 12:00:00.000 |               1 |            1 |
-|           3 | Av. 23 de Maio (centro → sul)              |                      3 |                 28.0 |             650 | 2026-11-18 12:00:00.000 |               0 |            1 |
-|           2 | Av. Rebouças (Paulista → Pinheiros)        |                      2 |                 35.0 |             390 | 2026-11-18 12:00:00.000 |               1 |            1 |
-+-------------+--------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
+| id_segmento | nome_via                                          | nivel_congestionamento | velocidade_media_kmh | volume_veiculos | registrado_em           | possui_ciclovia | faixa_onibus |
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
+|           1 | Avenida Paulista [OSM way 261785599]              |                      3 |                 25.0 |             330 | 2026-11-18 12:00:00.000 |               0 |            1 |
+|           2 | Avenida Paulista [OSM way 231341013]              |                      3 |                 25.0 |             370 | 2026-11-18 12:00:00.000 |               0 |            1 |
+|           3 | Avenida Rebouças [OSM way 329094557]              |                      3 |                 25.0 |             410 | 2026-11-18 12:00:00.000 |               1 |            1 |
+|           4 | Avenida Rebouças [OSM way 426510608]              |                      3 |                 25.0 |             450 | 2026-11-18 12:00:00.000 |               1 |            1 |
+|           5 | Rua da Consolação [OSM way 405489974]             |                      3 |                 25.0 |             490 | 2026-11-18 12:00:00.000 |               1 |            1 |
+|           6 | Rua da Consolação [OSM way 935573768]             |                      3 |                 25.0 |             530 | 2026-11-18 12:00:00.000 |               1 |            1 |
+|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                      3 |                 30.0 |             570 | 2026-11-18 12:00:00.000 |               0 |            0 |
+|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                      3 |                 30.0 |             610 | 2026-11-18 12:00:00.000 |               0 |            0 |
+|           9 | Marginal Pinheiros (Expressa) [OSM way 768961582] |                      3 |                 45.0 |             650 | 2026-11-18 12:00:00.000 |               0 |            0 |
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
 +----------------------------------------------+
 | relatorio                                    |
 +----------------------------------------------+
@@ -139,14 +157,14 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +-----------+-------+----------------+--------------+--------------+-----------+--------------+
 | id_viagem | ordem | codigo_modal   | codigo_linha | distancia_km | g_co2_pkm | co2_trecho_g |
 +-----------+-------+----------------+--------------+--------------+-----------+--------------+
-|         1 |     1 | BICICLETA      | NULL         |        3.200 |     0.000 |        0.000 |
-|         1 |     2 | METRO          | L2-VERDE     |        6.500 |     3.000 |       19.500 |
-|         2 |     1 | BICICLETA      | NULL         |        7.800 |     0.000 |        0.000 |
-|         3 |     1 | ONIBUS         | 702U-10      |        9.100 |    80.000 |      728.000 |
-|         4 |     1 | CARRO_GASOLINA | NULL         |       11.200 |   120.000 |     1344.000 |
-|         5 |     1 | METRO          | L4-AMARELA   |        8.400 |     3.000 |       25.200 |
-|         6 |     1 | A_PE           | NULL         |        0.800 |     0.000 |        0.000 |
-|         6 |     2 | METRO          | L1-AZUL      |        5.200 |     3.000 |       15.600 |
+|         1 |     1 | BICICLETA      | NULL         |        3.407 |     0.000 |        0.000 |
+|         1 |     2 | METRO          | L2           |        2.869 |     3.000 |        8.607 |
+|         2 |     1 | BICICLETA      | NULL         |        3.775 |     0.000 |        0.000 |
+|         3 |     1 | ONIBUS         | 702U-22      |        7.335 |    80.000 |      586.800 |
+|         4 |     1 | CARRO_GASOLINA | NULL         |        6.610 |   120.000 |      793.200 |
+|         5 |     1 | METRO          | L4           |        7.766 |     3.000 |       23.298 |
+|         6 |     1 | A_PE           | NULL         |        1.166 |     0.000 |        0.000 |
+|         6 |     2 | METRO          | L1           |        4.133 |     3.000 |       12.399 |
 +-----------+-------+----------------+--------------+--------------+-----------+--------------+
 +------------------------------------------------+
 | relatorio                                      |
@@ -156,10 +174,10 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +------------+----------------------+------------------+-------------------+
 | id_usuario | nome                 | economia_total_g | economia_total_kg |
 +------------+----------------------+------------------+-------------------+
-|          1 | Ana Fictícia Silva   |         1144.500 |             1.145 |
-|          5 | Elena Sample Costa   |          982.800 |             0.983 |
-|          2 | Bruno Teste Oliveira |          936.000 |             0.936 |
-|          3 | Carla Demo Souza     |          364.000 |             0.364 |
+|          5 | Elena Sample Costa   |          908.622 |             0.909 |
+|          1 | Ana Fictícia Silva   |          744.513 |             0.745 |
+|          2 | Bruno Teste Oliveira |          453.000 |             0.453 |
+|          3 | Carla Demo Souza     |          293.400 |             0.293 |
 |          4 | Diego Mock Pereira   |            0.000 |             0.000 |
 +------------+----------------------+------------------+-------------------+
 +----+------------------------------------+-----------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -186,7 +204,7 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 EXIT_CODE_SCRIPT_COMPLETO=0
 
 ################################################################################
-# PASSO 2: Contagens após script_completo
+# PASSO 2: Contagens + amostra linhas reais
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
 +------------------+----+
@@ -196,19 +214,71 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 | modal_transporte |  8 |
 | fonte_referencia |  4 |
 | fator_emissao    |  9 |
-| local            | 12 |
-| segmento_via     |  5 |
-| sensor           |  5 |
-| leitura_trafego  | 11 |
-| linha_transporte |  6 |
+| local            | 60 |
+| segmento_via     | 10 |
+| sensor           | 10 |
+| leitura_trafego  | 28 |
+| linha_transporte | 18 |
 | viagem           |  8 |
 | trecho_viagem    |  9 |
 | trecho_segmento  |  9 |
 | sugestao_modal   |  5 |
 +------------------+----+
++----------+---------+----------------------------------------------------------------+---------------------------+----------+
+| id_linha | codigo  | nome                                                           | operadora                 | id_modal |
++----------+---------+----------------------------------------------------------------+---------------------------+----------+
+|        1 | L1      | METRÔ L1 — TUCURUVI - JABAQUARA                                | Metrô-SP                  |        5 |
+|        2 | L2      | METRÔ L2 — VILA MADALENA - VILA PRUDENTE                       | Metrô-SP                  |        5 |
+|        3 | L3      | METRÔ L3 — CORINTHIANS - ITAQUERA - PALMEIRAS - BARRA FUNDA    | Metrô-SP                  |        5 |
+|        4 | L4      | METRÔ L4 — SÃO PAULO - MORUMBI - LUZ                           | ViaQuatro / Metrô-SP      |        5 |
+|        5 | L5      | METRÔ L5 — CAPAO REDONDO - CHÁCARA KLABIN                      | ViaMobilidade / Metrô-SP  |        5 |
+|        6 | L07     | CPTM L07 — JUNDIAI - LUZ                                       | CPTM                      |        6 |
+|        7 | L08     | CPTM L08 — AMADOR BUENO - JULIO PRESTES                        | CPTM                      |        6 |
+|        8 | L09     | CPTM L09 — VARGINHA - OSASCO                                   | CPTM                      |        6 |
+|        9 | 875A-10 | Aeroporto - Perdizes                                           | SPTrans                   |        4 |
+|       10 | 702U-22 | Metrô Butantã - Term. Pq. D. Pedro Ii                          | SPTrans                   |        4 |
+|       11 | 177Y-10 | Metrô Barra Funda - Pinheiros                                  | SPTrans                   |        4 |
+|       12 | 917H-10 | Term. Pirituba - Metrô Vl. Mariana                             | SPTrans                   |        4 |
+|       13 | 675A-10 | Pq. Sto. Antonio - Metrô São Judas                             | SPTrans                   |        4 |
+|       14 | 509M-10 | Jd. Miriam - Term. Princ. Isabel                               | SPTrans                   |        4 |
+|       15 | 5154-10 | Term. Sto. Amaro - Term. Princ. Isabel                         | SPTrans                   |        4 |
+|       16 | 107T-10 | Metrô Tucuruvi - Term. Pinheiros                               | SPTrans                   |        4 |
+|       17 | 930P-10 | Term. Pq. D. Pedro Ii - Term. Pinheiros                        | SPTrans                   |        4 |
+|       18 | 2002-10 | Term. Pq. D. Pedro Ii - Term. Bandeira                         | SPTrans                   |        4 |
++----------+---------+----------------------------------------------------------------+---------------------------+----------+
++-------------+---------------------------------------------------+--------------------+-----------------+--------------+
+| id_segmento | nome_via                                          | velocidade_max_kmh | possui_ciclovia | faixa_onibus |
++-------------+---------------------------------------------------+--------------------+-----------------+--------------+
+|           1 | Avenida Paulista [OSM way 261785599]              |                 50 |               0 |            1 |
+|           2 | Avenida Paulista [OSM way 231341013]              |                 50 |               0 |            1 |
+|           3 | Avenida Rebouças [OSM way 329094557]              |                 50 |               1 |            1 |
+|           4 | Avenida Rebouças [OSM way 426510608]              |                 50 |               1 |            1 |
+|           5 | Rua da Consolação [OSM way 405489974]             |                 50 |               1 |            1 |
+|           6 | Rua da Consolação [OSM way 935573768]             |                 50 |               1 |            1 |
+|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                 60 |               0 |            0 |
+|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                 60 |               0 |            0 |
+|           9 | Marginal Pinheiros (Expressa) [OSM way 768961582] |                 90 |               0 |            0 |
+|          10 | Marginal Pinheiros (Expressa) [OSM way 96085719]  |                 90 |               1 |            0 |
++-------------+---------------------------------------------------+--------------------+-----------------+--------------+
++----------+-------------------------+--------------+------------+------------+
+| id_local | nome                    | tipo         | lon        | lat        |
++----------+-------------------------+--------------+------------+------------+
+|        1 | Sé                      | estacao      | -46.633305 |   -23.5505 |
+|        2 | Paulista                | estacao      | -46.662131 | -23.555071 |
+|        3 | Consolação              | estacao      | -46.660205 | -23.558094 |
+|        4 | Pinheiros               | estacao      | -46.703082 | -23.566631 |
+|        5 | Luz                     | estacao      |   -46.6343 |   -23.5366 |
+|        6 | República               | estacao      | -46.642461 | -23.544215 |
+|        7 | Ana Rosa                | estacao      | -46.638489 | -23.581203 |
+|        8 | Tucuruvi                | estacao      | -46.603209 | -23.480049 |
+|        9 | Jabaquara               | estacao      | -46.641028 | -23.646033 |
+|       10 | Vila Madalena           | estacao      | -46.691141 | -23.546498 |
+|       11 | Vila Prudente           | estacao      | -46.581943 | -23.584447 |
+|       12 | Palmeiras - Barra Funda | ponto_onibus | -46.666547 | -23.525317 |
++----------+-------------------------+--------------+------------+------------+
 
 ################################################################################
-# PASSO 3: Reexecução via scripts numerados (run_all.sh) em servidor limpo
+# PASSO 3: scripts numerados (run_all) em DB limpo
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
 ==> MySQL target: root@127.0.0.1:3306
@@ -227,17 +297,17 @@ versao
 
 ==> Executando sql/06_seed.sql
 status
-Seed concluído
+Seed concluído (dados reais + simulados)
 tabela	n
 usuario	5
 modal_transporte	8
 fonte_referencia	4
 fator_emissao	9
-local	12
-segmento_via	5
-sensor	5
-leitura_trafego	11
-linha_transporte	6
+local	60
+segmento_via	10
+sensor	10
+leitura_trafego	28
+linha_transporte	18
 viagem	7
 trecho_viagem	8
 trecho_segmento	9
@@ -247,57 +317,74 @@ sugestao_modal	5
 relatorio
 === 1) CO₂ por usuário ===
 id_usuario	nome	qtd_viagens	distancia_total_km	co2_total_g
-4	Diego Mock Pereira	1	11.200	1344.000
-3	Carla Demo Souza	1	9.100	728.000
-5	Elena Sample Costa	1	8.400	25.200
-1	Ana Fictícia Silva	1	9.700	19.500
-2	Bruno Teste Oliveira	1	7.800	0.000
+4	Diego Mock Pereira	1	6.610	793.200
+3	Carla Demo Souza	1	7.335	586.800
+5	Elena Sample Costa	1	7.766	23.298
+1	Ana Fictícia Silva	1	6.276	8.607
+2	Bruno Teste Oliveira	1	3.775	0.000
 relatorio
 === 2) CO₂ por modal ===
 codigo	nome	categoria	qtd_trechos	distancia_total_km	co2_total_g
-CARRO_GASOLINA	Carro a gasolina	individual	1	11.200	1344.000
-ONIBUS	Ônibus municipal	coletivo	1	9.100	728.000
-METRO	Metrô	coletivo	3	20.100	60.300
-A_PE	A pé	ativo	1	0.800	0.000
-BICICLETA	Bicicleta	ativo	2	11.000	0.000
+CARRO_GASOLINA	Carro a gasolina	individual	1	6.610	793.200
+ONIBUS	Ônibus municipal	coletivo	1	7.335	586.800
+METRO	Metrô	coletivo	3	14.768	44.304
+A_PE	A pé	ativo	1	1.166	0.000
+BICICLETA	Bicicleta	ativo	2	7.182	0.000
 BIKE_ELETRICA	Bicicleta/patinete elétrico	ativo	0	0.000	0.000
 TREM	Trem metropolitano (CPTM)	coletivo	0	0.000	0.000
 MOTOCICLETA	Motocicleta	individual	0	0.000	0.000
 relatorio
 === 3) CO₂ por linha/rota ===
 codigo	nome	operadora	codigo_modal	qtd_trechos	distancia_total_km	co2_total_g
-702U-10	702U-10 Term. Pq. D. Pedro II ↔ Butantã-USP	SPTrans	ONIBUS	1	9.100	728.000
-L4-AMARELA	Linha 4-Amarela (Luz ↔ Vila Sônia)	ViaQuatro	METRO	1	8.400	25.200
-L2-VERDE	Linha 2-Verde (Vila Madalena ↔ Vila Prudente)	Metrô-SP	METRO	1	6.500	19.500
-L1-AZUL	Linha 1-Azul (Tucuruvi ↔ Jabaquara)	Metrô-SP	METRO	1	5.200	15.600
-875A-10	875A-10 Aeroporto ↔ Metrô Barra Funda (FAKE-trajeto)	SPTrans	ONIBUS	0	0.000	0.000
-CPT-7	Linha 7-Rubi (Luz ↔ Francisco Morato)	CPTM	TREM	0	0.000	0.000
+702U-22	Metrô Butantã - Term. Pq. D. Pedro Ii	SPTrans	ONIBUS	1	7.335	586.800
+L4	METRÔ L4 — SÃO PAULO - MORUMBI - LUZ	ViaQuatro / Metrô-SP	METRO	1	7.766	23.298
+L1	METRÔ L1 — TUCURUVI - JABAQUARA	Metrô-SP	METRO	1	4.133	12.399
+L2	METRÔ L2 — VILA MADALENA - VILA PRUDENTE	Metrô-SP	METRO	1	2.869	8.607
+L5	METRÔ L5 — CAPAO REDONDO - CHÁCARA KLABIN	ViaMobilidade / Metrô-SP	METRO	0	0.000	0.000
+L07	CPTM L07 — JUNDIAI - LUZ	CPTM	TREM	0	0.000	0.000
+L08	CPTM L08 — AMADOR BUENO - JULIO PRESTES	CPTM	TREM	0	0.000	0.000
+L09	CPTM L09 — VARGINHA - OSASCO	CPTM	TREM	0	0.000	0.000
+875A-10	Aeroporto - Perdizes	SPTrans	ONIBUS	0	0.000	0.000
+L3	METRÔ L3 — CORINTHIANS - ITAQUERA - PALMEIRAS - BARRA FUNDA	Metrô-SP	METRO	0	0.000	0.000
+177Y-10	Metrô Barra Funda - Pinheiros	SPTrans	ONIBUS	0	0.000	0.000
+917H-10	Term. Pirituba - Metrô Vl. Mariana	SPTrans	ONIBUS	0	0.000	0.000
+675A-10	Pq. Sto. Antonio - Metrô São Judas	SPTrans	ONIBUS	0	0.000	0.000
+509M-10	Jd. Miriam - Term. Princ. Isabel	SPTrans	ONIBUS	0	0.000	0.000
+5154-10	Term. Sto. Amaro - Term. Princ. Isabel	SPTrans	ONIBUS	0	0.000	0.000
+107T-10	Metrô Tucuruvi - Term. Pinheiros	SPTrans	ONIBUS	0	0.000	0.000
+930P-10	Term. Pq. D. Pedro Ii - Term. Pinheiros	SPTrans	ONIBUS	0	0.000	0.000
+2002-10	Term. Pq. D. Pedro Ii - Term. Bandeira	SPTrans	ONIBUS	0	0.000	0.000
 relatorio
 === 4) Economia vs carro (por trecho) ===
 id_viagem	codigo_modal	distancia_km	co2_trecho_g	co2_se_carro_g	economia_vs_carro_g
-5	METRO	8.400	25.200	1008.000	982.800
-2	BICICLETA	7.800	0.000	936.000	936.000
-1	METRO	6.500	19.500	780.000	760.500
-6	METRO	5.200	15.600	624.000	608.400
-1	BICICLETA	3.200	0.000	384.000	384.000
-3	ONIBUS	9.100	728.000	1092.000	364.000
-6	A_PE	0.800	0.000	96.000	96.000
-4	CARRO_GASOLINA	11.200	1344.000	1344.000	0.000
+5	METRO	7.766	23.298	931.920	908.622
+6	METRO	4.133	12.399	495.960	483.561
+2	BICICLETA	3.775	0.000	453.000	453.000
+1	BICICLETA	3.407	0.000	408.840	408.840
+1	METRO	2.869	8.607	344.280	335.673
+3	ONIBUS	7.335	586.800	880.200	293.400
+6	A_PE	1.166	0.000	139.920	139.920
+4	CARRO_GASOLINA	6.610	793.200	793.200	0.000
 relatorio
 === 5) Economia mensal por usuário ===
 id_usuario	nome_usuario	ano_mes	qtd_viagens	distancia_km	co2_emitido_g	co2_se_carro_g	economia_vs_carro_g
-1	Ana Fictícia Silva	2026-11	1	9.700	19.500	1164.000	1144.500
-5	Elena Sample Costa	2026-11	1	8.400	25.200	1008.000	982.800
-2	Bruno Teste Oliveira	2026-11	1	7.800	0.000	936.000	936.000
-3	Carla Demo Souza	2026-11	1	9.100	728.000	1092.000	364.000
-4	Diego Mock Pereira	2026-11	1	11.200	1344.000	1344.000	0.000
+5	Elena Sample Costa	2026-11	1	7.766	23.298	931.920	908.622
+1	Ana Fictícia Silva	2026-11	1	6.276	8.607	753.120	744.513
+2	Bruno Teste Oliveira	2026-11	1	3.775	0.000	453.000	453.000
+3	Carla Demo Souza	2026-11	1	7.335	586.800	880.200	293.400
+4	Diego Mock Pereira	2026-11	1	6.610	793.200	793.200	0.000
 relatorio
 === 6) Ranking de congestionamento atual ===
 id_segmento	nome_via	nivel_congestionamento	velocidade_media_kmh	volume_veiculos	registrado_em	possui_ciclovia	faixa_onibus
-4	Rua da Consolação	3	15.5	160	2026-11-18 12:00:00.000	1	0
-1	Av. Paulista (Consolação → Brigadeiro)	3	22.0	380	2026-11-18 12:00:00.000	1	1
-3	Av. 23 de Maio (centro → sul)	3	28.0	650	2026-11-18 12:00:00.000	0	1
-2	Av. Rebouças (Paulista → Pinheiros)	2	35.0	390	2026-11-18 12:00:00.000	1	1
+1	Avenida Paulista [OSM way 261785599]	3	25.0	330	2026-11-18 12:00:00.000	0	1
+2	Avenida Paulista [OSM way 231341013]	3	25.0	370	2026-11-18 12:00:00.000	0	1
+3	Avenida Rebouças [OSM way 329094557]	3	25.0	410	2026-11-18 12:00:00.000	1	1
+4	Avenida Rebouças [OSM way 426510608]	3	25.0	450	2026-11-18 12:00:00.000	1	1
+5	Rua da Consolação [OSM way 405489974]	3	25.0	490	2026-11-18 12:00:00.000	1	1
+6	Rua da Consolação [OSM way 935573768]	3	25.0	530	2026-11-18 12:00:00.000	1	1
+7	Avenida Vinte e Três de Maio [OSM way 241249687]	3	30.0	570	2026-11-18 12:00:00.000	0	0
+8	Avenida Vinte e Três de Maio [OSM way 286269721]	3	30.0	610	2026-11-18 12:00:00.000	0	0
+9	Marginal Pinheiros (Expressa) [OSM way 768961582]	3	45.0	650	2026-11-18 12:00:00.000	0	0
 relatorio
 === 7) Taxa de aceitação de sugestões ===
 total_sugestoes	aceitas	recusadas	sem_resposta	taxa_aceitacao_pct
@@ -305,21 +392,21 @@ total_sugestoes	aceitas	recusadas	sem_resposta	taxa_aceitacao_pct
 relatorio
 === 8) Emissão detalhada por trecho ===
 id_viagem	ordem	codigo_modal	codigo_linha	distancia_km	g_co2_pkm	co2_trecho_g
-1	1	BICICLETA	NULL	3.200	0.000	0.000
-1	2	METRO	L2-VERDE	6.500	3.000	19.500
-2	1	BICICLETA	NULL	7.800	0.000	0.000
-3	1	ONIBUS	702U-10	9.100	80.000	728.000
-4	1	CARRO_GASOLINA	NULL	11.200	120.000	1344.000
-5	1	METRO	L4-AMARELA	8.400	3.000	25.200
-6	1	A_PE	NULL	0.800	0.000	0.000
-6	2	METRO	L1-AZUL	5.200	3.000	15.600
+1	1	BICICLETA	NULL	3.407	0.000	0.000
+1	2	METRO	L2	2.869	3.000	8.607
+2	1	BICICLETA	NULL	3.775	0.000	0.000
+3	1	ONIBUS	702U-22	7.335	80.000	586.800
+4	1	CARRO_GASOLINA	NULL	6.610	120.000	793.200
+5	1	METRO	L4	7.766	3.000	23.298
+6	1	A_PE	NULL	1.166	0.000	0.000
+6	2	METRO	L1	4.133	3.000	12.399
 relatorio
 === 9) Top usuários por economia de CO₂ ===
 id_usuario	nome	economia_total_g	economia_total_kg
-1	Ana Fictícia Silva	1144.500	1.145
-5	Elena Sample Costa	982.800	0.983
-2	Bruno Teste Oliveira	936.000	0.936
-3	Carla Demo Souza	364.000	0.364
+5	Elena Sample Costa	908.622	0.909
+1	Ana Fictícia Silva	744.513	0.745
+2	Bruno Teste Oliveira	453.000	0.453
+3	Carla Demo Souza	293.400	0.293
 4	Diego Mock Pereira	0.000	0.000
 
 ==> Executando sql/08_testes.sql
@@ -342,131 +429,4 @@ testes_ok	testes_falhos	total
 ==> Concluído (scripts numerados).
 EXIT_CODE_RUN_ALL=0
 
-################################################################################
-# PASSO 4: Monitoramento (09)
-################################################################################
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+--------------------------+
-| info                     |
-+--------------------------+
-| === Versão e uptime ===  |
-+--------------------------+
-+-------------------------+--------+--------------+
-| versao                  | host   | uptime_horas |
-+-------------------------+--------+--------------+
-| 8.0.46-0ubuntu0.24.04.5 | cursor |         0.04 |
-+-------------------------+--------+--------------+
-+-------------------------------------+
-| info                                |
-+-------------------------------------+
-| === Tabelas do schema (tamanho) === |
-+-------------------------------------+
-+----------------------------+--------+------------+---------+----------+
-| TABLE_NAME                 | ENGINE | TABLE_ROWS | data_mb | index_mb |
-+----------------------------+--------+------------+---------+----------+
-| viagem                     | InnoDB |          9 |   0.016 |    0.047 |
-| usuario                    | InnoDB |          5 |   0.016 |    0.047 |
-| sugestao_modal             | InnoDB |          5 |   0.016 |    0.047 |
-| trecho_viagem              | InnoDB |          9 |   0.016 |    0.047 |
-| fator_emissao              | InnoDB |          9 |   0.016 |    0.031 |
-| leitura_trafego            | InnoDB |         11 |   0.016 |    0.031 |
-| linha_transporte           | InnoDB |          6 |   0.016 |    0.031 |
-| modal_transporte           | InnoDB |          8 |   0.016 |    0.031 |
-| sensor                     | InnoDB |          5 |   0.016 |    0.016 |
-| trecho_segmento            | InnoDB |          9 |   0.016 |    0.016 |
-| fonte_referencia           | InnoDB |          4 |   0.016 |    0.000 |
-| segmento_via               | InnoDB |          5 |   0.016 |    0.000 |
-| local                      | InnoDB |         12 |   0.016 |    0.000 |
-| vw_congestionamento_atual  | NULL   |       NULL |    NULL |     NULL |
-| vw_economia_usuario_mes    | NULL   |       NULL |    NULL |     NULL |
-| vw_economia_vs_carro       | NULL   |       NULL |    NULL |     NULL |
-| vw_emissao_linha           | NULL   |       NULL |    NULL |     NULL |
-| vw_emissao_modal           | NULL   |       NULL |    NULL |     NULL |
-| vw_emissao_trecho          | NULL   |       NULL |    NULL |     NULL |
-| vw_emissao_usuario         | NULL   |       NULL |    NULL |     NULL |
-| vw_emissao_viagem          | NULL   |       NULL |    NULL |     NULL |
-| vw_taxa_aceitacao_sugestao | NULL   |       NULL |    NULL |     NULL |
-+----------------------------+--------+------------+---------+----------+
-+----------------------------+
-| info                       |
-+----------------------------+
-| === Índices espaciais ===  |
-+----------------------------+
-+------------------+-------------------+------------+--------------+
-| TABLE_NAME       | INDEX_NAME        | INDEX_TYPE | COLUMN_NAME  |
-+------------------+-------------------+------------+--------------+
-| linha_transporte | spx_linha_trajeto | SPATIAL    | geom_trajeto |
-| local            | spx_local_geom    | SPATIAL    | geom         |
-| segmento_via     | spx_segmento_geom | SPATIAL    | geom         |
-| sensor           | spx_sensor_geom   | SPATIAL    | geom         |
-+------------------+-------------------+------------+--------------+
-+---------------------------+
-| info                      |
-+---------------------------+
-| === Eventos agendados === |
-+---------------------------+
-+-------------------+----------------------------+---------+----------------+----------------+---------------+
-| EVENT_SCHEMA      | EVENT_NAME                 | STATUS  | INTERVAL_VALUE | INTERVAL_FIELD | LAST_EXECUTED |
-+-------------------+----------------------------+---------+----------------+----------------+---------------+
-| mobilidade_urbana | ev_limpeza_mensal_leituras | ENABLED | 1              | MONTH          | NULL          |
-+-------------------+----------------------------+---------+----------------+----------------+---------------+
-+----------------------------------------------------+
-| info                                               |
-+----------------------------------------------------+
-| === sys.statements_with_full_table_scans (top) === |
-+----------------------------------------------------+
-+-------------------------------------------------------------------+-------------------+------------+---------------+---------------------+--------------------------+-------------------+-----------+---------------+---------------+-------------------+----------------------------+----------------------------+------------------------------------------------------------------+
-| query                                                             | db                | exec_count | total_latency | no_index_used_count | no_good_index_used_count | no_index_used_pct | rows_sent | rows_examined | rows_sent_avg | rows_examined_avg | first_seen                 | last_seen                  | digest                                                           |
-+-------------------------------------------------------------------+-------------------+------------+---------------+---------------------+--------------------------+-------------------+-----------+---------------+---------------+-------------------+----------------------------+----------------------------+------------------------------------------------------------------+
-| SELECT `id_viagem` , `ordem` , ... ORDER BY `id_viagem` , `ordem` | mobilidade_urbana |          3 | 804.61 us     |                   3 |                        0 |               100 |        24 |           117 |             8 |                39 | 2026-11-18 23:27:27.663001 | 2026-11-18 23:27:50.458771 | d49e84fa07574dcc3796c4ab59d86909bec45f4c532ca26dc45f35e0ab972db7 |
-| SELECT `total_sugestoes` , `ac ... M `vw_taxa_aceitacao_sugestao` | mobilidade_urbana |          3 | 791.28 us     |                   3 |                        0 |               100 |         3 |            18 |             1 |                 6 | 2026-11-18 23:27:27.662530 | 2026-11-18 23:27:50.458452 | 43fa864be6c36569b5602e04df8588bc93d777ecd849dbd73ed7fbb3fc375d9b |
-| SELECT `id_usuario` , `nome` , ... o` ORDER BY `co2_total_g` DESC | mobilidade_urbana |          3 | 3.19 ms       |                   3 |                        0 |               100 |        15 |            30 |             5 |                10 | 2026-11-18 23:27:27.656861 | 2026-11-18 23:27:50.454028 | d9d51837c457ddac2a22bac20ddc24666d39dc2291f80b6b5d6df47ebaa2e0bf |
-| SELECT `id_usuario` , `nome_us ... ` , `economia_vs_carro_g` DESC | mobilidade_urbana |          3 | 2.95 ms       |                   3 |                        0 |               100 |        15 |            30 |             5 |                10 | 2026-11-18 23:27:27.661335 | 2026-11-18 23:27:50.457458 | de983a95d1f2c4a22db87720828b44d327bebaf8369d3b67b521d63c549f2a79 |
-| SELECT `codigo` , `nome` , `ca ... l` ORDER BY `co2_total_g` DESC | mobilidade_urbana |          3 | 1.93 ms       |                   3 |                        0 |               100 |        24 |            48 |             8 |                16 | 2026-11-18 23:27:27.657935 | 2026-11-18 23:27:50.454823 | bdfbcc9d2aaf1c92d8ff6b7af50a0631a6d3f5a58fae4a45c82f590039e0a681 |
-| SELECT `u` . `id_usuario` , `u ... DER BY `economia_total_g` DESC | mobilidade_urbana |          3 | 1.91 ms       |                   3 |                        0 |               100 |        15 |           250 |             5 |                83 | 2026-11-18 23:27:27.663905 | 2026-11-18 23:27:50.459503 | 40cbdbf093a3d1db10afdd58d4af7ada94c8e0b7958e2046116bb1a7ae523273 |
-| SELECT `id_viagem` , `codigo_m ...  BY `economia_vs_carro_g` DESC | mobilidade_urbana |          3 | 1.88 ms       |                   3 |                        0 |               100 |        24 |           151 |             8 |                50 | 2026-11-18 23:27:27.659772 | 2026-11-18 23:27:50.456404 | 9356cf86dccffde2064c5586ed60fa5d5aa36a5ba727e6f7d097f36e57a32428 |
-| SELECT `codigo` , `nome` , `op ... a` ORDER BY `co2_total_g` DESC | mobilidade_urbana |          3 | 1.54 ms       |                   3 |                        0 |               100 |        18 |            36 |             6 |                12 | 2026-11-18 23:27:27.658779 | 2026-11-18 23:27:50.455638 | ed9aeb2458ae26caac06cf5a7bc4a0c0176cb4da2c6e5ef3dc8301f0ca78b4da |
-| SELECT `id_segmento` , `nome_v ... C , `velocidade_media_kmh` ASC | mobilidade_urbana |          3 | 1.42 ms       |                   3 |                        0 |               100 |        12 |            63 |             4 |                21 | 2026-11-18 23:27:27.662073 | 2026-11-18 23:27:50.458032 | af9a2e499aef7190be9a459008cec97ace5fa7cb3e462d1a196553c77e85747d |
-+-------------------------------------------------------------------+-------------------+------------+---------------+---------------------+--------------------------+-------------------+-----------+---------------+---------------+-------------------+----------------------------+----------------------------+------------------------------------------------------------------+
-+----------------------------+
-| info                       |
-+----------------------------+
-| === Threads conectadas === |
-+----------------------------+
-+------------------+------------------+----------------+---------------------+-----------------------------+
-| processlist_user | processlist_host | processlist_db | processlist_command | processlist_state           |
-+------------------+------------------+----------------+---------------------+-----------------------------+
-| event_scheduler  | localhost        | NULL           | Daemon              | Waiting for next activation |
-| NULL             | NULL             | NULL           | Daemon              | Suspending                  |
-| root             | localhost        | NULL           | Query               | executing                   |
-+------------------+------------------+----------------+---------------------+-----------------------------+
-+----------------------------+
-| info                       |
-+----------------------------+
-| === InnoDB buffer pool === |
-+----------------------------+
-+----------------------------------+----------------+
-| VARIABLE_NAME                    | VARIABLE_VALUE |
-+----------------------------------+----------------+
-| Innodb_buffer_pool_read_requests | 181259         |
-| Innodb_buffer_pool_reads         | 884            |
-| Innodb_row_lock_waits            | 0              |
-| Questions                        | 1249           |
-+----------------------------------+----------------+
-
-################################################################################
-# PASSO 5: Sample sp_gerar_sugestao_sustentavel
-################################################################################
-mysql: [Warning] Using a password on the command line interface can be insecure.
-+-------------+--------------------------------------+
-| id_sugestao | mensagem                             |
-+-------------+--------------------------------------+
-|           6 | Sugestão gerada (motivo=menor_co2).  |
-+-------------+--------------------------------------+
-+-------------+-----------+-------------------+----------+-----------+-----------------------+
-| id_sugestao | id_viagem | id_modal_sugerido | id_linha | motivo    | distancia_estimada_km |
-+-------------+-----------+-------------------+----------+-----------+-----------------------+
-|           6 |         7 |                 2 |     NULL | menor_co2 |                 5.000 |
-+-------------+-----------+-------------------+----------+-----------+-----------------------+
-
-=== FIM DA EXECUÇÃO ===
+=== FIM ===

@@ -45,15 +45,17 @@ sql/
   03_triggers.sql        # Sobreposição de fator, coerência modal×linha, sugestão sustentável
   04_procedures.sql      # sp_registrar_viagem, sp_gerar_sugestao_sustentavel, EVENT limpeza
   05_security.sql        # roles (app / analista / admin) + users + GRANTs
-  06_seed.sql            # dados SP (fictícios) + fatores exatamente de docs/normalizacao.md
+  06_seed.sql            # GERADO: GTFS/OSM reais + fatores + simulações LGPD
   07_relatorios.sql      # consultas de relatório
   08_testes.sql          # provas de rejeição (CHECK/FK/trigger) + rollback de transação
   09_monitoramento.sql   # performance_schema / sys (administração)
   script_completo.sql    # GERADO – não editar à mão
 scripts/
+  importar_dados_reais.py    # baixa GTFS/OSM e regenera 06_seed.sql
   build_script_completo.sh   # concatena 01–08 → script_completo.sql
   run_all.sh                 # executa 01–08 em ordem
   backup_restore_exemplo.sh  # mysqldump + notas de PITR via binlog
+data/cache/                  # cache de download (zip GTFS não versionado)
 docs/
   er.png / er.mmd        # modelo ER aprovado (13 tabelas, 3FN)
   normalizacao.md        # dicionário, restrições e decisões MySQL
@@ -90,23 +92,40 @@ Fonte Mermaid: [`docs/er.mmd`](docs/er.mmd). **13 tabelas** em 3FN. Valores de C
 
 ## Origem dos dados
 
-O seed em `sql/06_seed.sql` é **fictício/simulado** (pessoas, viagens, leituras, geometrias simplificadas), com nomes claramente fake. **Exceção:** `fator_emissao` e `fonte_referencia` usam valores e URLs **reais**, conforme [`docs/normalizacao.md`](docs/normalizacao.md). Em produção, a ingestão prevista seria:
+O seed `sql/06_seed.sql` é **gerado** por `scripts/importar_dados_reais.py` (reprodutível; o SQL commitado permite rodar offline). Acesso registrado na geração (ver cabeçalho do seed e `data/cache/seed_provenance.json`).
 
-| Tabela | Fonte no mundo real | Como ingerir / frequência |
-|---|---|---|
-| `modal_transporte` | Catálogo interno do produto (modais suportados) | Carga inicial + atualização eventual (sob demanda) |
-| `fonte_referencia` | Publicações oficiais (Metrô-SP, CETESB, MCTI/SIRENE, UK DESNZ) | Manual/ETL quando sair novo inventário (anual ou sob demanda) |
-| `fator_emissao` | Mesmas fontes oficiais/estimativas documentadas no dicionário | ETL versionado com `vigencia_inicio`/`vigencia_fim` (anual ou sob demanda) |
-| `usuario` | Cadastro no aplicativo | Tempo real (API do app), no momento do registro |
-| `local` | OpenStreetMap e/ou [GeoSampa](http://geosampa.prefeitura.sp.gov.br/) (estações, pontos, endereços) | Batch diário/semanal + cache de geocoding sob demanda |
-| `segmento_via` | OpenStreetMap / GeoSampa (malha viária) | Batch semanal ou mensal (atualização da malha) |
-| `sensor` | Cadastro operacional CET-SP / operadoras | Carga inicial + mudanças sob demanda |
-| `leitura_trafego` | Sensores CET-SP; GPS da frota via API [Olho Vivo SPTrans](https://www.sptrans.com.br/desenvolvedores/) | Tempo quase real (segundos a minutos; streaming/API polling) |
-| `linha_transporte` | GTFS SPTrans + dados abertos Metrô-SP / CPTM | Batch diário (feed GTFS) ou quando houver alteração de rede |
-| `viagem` | App (planejamento/início/fim da viagem) | Tempo real via API do app |
-| `trecho_viagem` | App + GPS do dispositivo (perna por modal) | Tempo real durante/ao finalizar a viagem |
-| `trecho_segmento` | Matching GPS × malha (`segmento_via`) | Tempo real ou near-real-time após o trecho |
-| `sugestao_modal` | Gerada pela procedure `sp_gerar_sugestao_sustentavel` (usa congestionamento atual) | Sob demanda, quando o usuário pede rota/alternativa |
+**No seed atual**
+
+| Tabela | No seed | Fonte / observação | Licença / URL |
+|---|---|---|---|
+| `linha_transporte` (+ `geom_trajeto`) | **Real** (subconjunto) | GTFS SPTrans via espelho [Mobility Database mdb-8](https://mobilitydatabase.org/feeds/gtfs/mdb-8) (`mdb-latest` no GCS). O feed inclui **Metrô** (`route_type=1`) e **CPTM** (`route_type=2`). Produtor oficial exige cadastro: [SPTrans Desenvolvedores](https://www.sptrans.com.br/desenvolvedores/). Subconjunto: Metrô L1–L5, CPTM L07–L09, 10 linhas de ônibus com trips no feed. | Termos SPTrans / espelho MDB; shapes GTFS |
+| `local` | **Real** (subconjunto) | `stops.txt` do mesmo GTFS (estações/paradas com coordenadas reais) | Idem |
+| `segmento_via` | **Real** | OpenStreetMap (Nominatim + API 0.6 `way/full`) nos corredores Paulista, Rebouças, Consolação, 23 de Maio, Marginal Pinheiros (`maxspeed`, ciclovia, faixa de ônibus quando tagueados) | [ODbL 1.0](https://www.openstreetmap.org/copyright) — © OpenStreetMap contributors |
+| `fator_emissao` / `fonte_referencia` | **Real** | Valores e URLs de [`docs/normalizacao.md`](docs/normalizacao.md) (Metrô-SP, MCTI/SIRENE, UK DESNZ) | Conforme cada publicação |
+| `modal_transporte` | Catálogo | Domínio interno do produto | — |
+| `sensor` / `leitura_trafego` | **Simulado** | Posição no ponto médio de segmentos OSM reais; leituras sintéticas. CET-SP lentidão e [Olho Vivo SPTrans](https://www.sptrans.com.br/desenvolvedores/) exigem token/endpoints não disponíveis sem cadastro nesta execução. | — |
+| `usuario` / `viagem` / `trecho_viagem` / `trecho_segmento` / `sugestao_modal` | **Simulado** | Pessoas fictícias (LGPD). Viagens/sugestões ancoradas em locais/linhas/segmentos reais; `distancia_km` por haversine entre coordenadas reais. `sugestao_modal` também pode ser gerada por `sp_gerar_sugestao_sustentavel`. | — |
+
+Regenerar o seed (requer rede):
+
+```bash
+python3 scripts/importar_dados_reais.py
+./scripts/build_script_completo.sh
+```
+
+**Ingestão em produção (frequência)**
+
+| Tabela | Como ingerir / frequência |
+|---|---|
+| `modal_transporte` | Carga inicial + sob demanda |
+| `fonte_referencia` / `fator_emissao` | ETL quando sair inventário (anual / sob demanda) |
+| `local` / `linha_transporte` | Batch diário do GTFS (SPTrans + Metrô/CPTM no feed) |
+| `segmento_via` | Batch semanal/mensal OSM / GeoSampa |
+| `sensor` | Cadastro CET-SP / operadoras (sob demanda) |
+| `leitura_trafego` | Quase tempo real: CET-SP + Olho Vivo SPTrans (token) |
+| `usuario` / `viagem` / `trecho_viagem` | Tempo real via app (+ GPS) |
+| `trecho_segmento` | Near-real-time (matching GPS × malha) |
+| `sugestao_modal` | Sob demanda (`sp_gerar_sugestao_sustentavel`) |
 
 ## Segurança, backup e monitoramento
 
