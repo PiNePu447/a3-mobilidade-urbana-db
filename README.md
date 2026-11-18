@@ -88,6 +88,26 @@ Detalhes e decisões (sem particionar `leitura_trafego` para manter FK, coluna g
 
 Fonte Mermaid: [`docs/er.mmd`](docs/er.mmd). **13 tabelas** em 3FN. Valores de CO₂/economia **não são armazenados** — calculados em views com o fator vigente na data do trecho.
 
+## Origem dos dados
+
+O seed em `sql/06_seed.sql` é **fictício/simulado** (pessoas, viagens, leituras, geometrias simplificadas), com nomes claramente fake. **Exceção:** `fator_emissao` e `fonte_referencia` usam valores e URLs **reais**, conforme [`docs/normalizacao.md`](docs/normalizacao.md). Em produção, a ingestão prevista seria:
+
+| Tabela | Fonte no mundo real | Como ingerir / frequência |
+|---|---|---|
+| `modal_transporte` | Catálogo interno do produto (modais suportados) | Carga inicial + atualização eventual (sob demanda) |
+| `fonte_referencia` | Publicações oficiais (Metrô-SP, CETESB, MCTI/SIRENE, UK DESNZ) | Manual/ETL quando sair novo inventário (anual ou sob demanda) |
+| `fator_emissao` | Mesmas fontes oficiais/estimativas documentadas no dicionário | ETL versionado com `vigencia_inicio`/`vigencia_fim` (anual ou sob demanda) |
+| `usuario` | Cadastro no aplicativo | Tempo real (API do app), no momento do registro |
+| `local` | OpenStreetMap e/ou [GeoSampa](http://geosampa.prefeitura.sp.gov.br/) (estações, pontos, endereços) | Batch diário/semanal + cache de geocoding sob demanda |
+| `segmento_via` | OpenStreetMap / GeoSampa (malha viária) | Batch semanal ou mensal (atualização da malha) |
+| `sensor` | Cadastro operacional CET-SP / operadoras | Carga inicial + mudanças sob demanda |
+| `leitura_trafego` | Sensores CET-SP; GPS da frota via API [Olho Vivo SPTrans](https://www.sptrans.com.br/desenvolvedores/) | Tempo quase real (segundos a minutos; streaming/API polling) |
+| `linha_transporte` | GTFS SPTrans + dados abertos Metrô-SP / CPTM | Batch diário (feed GTFS) ou quando houver alteração de rede |
+| `viagem` | App (planejamento/início/fim da viagem) | Tempo real via API do app |
+| `trecho_viagem` | App + GPS do dispositivo (perna por modal) | Tempo real durante/ao finalizar a viagem |
+| `trecho_segmento` | Matching GPS × malha (`segmento_via`) | Tempo real ou near-real-time após o trecho |
+| `sugestao_modal` | Gerada pela procedure `sp_gerar_sugestao_sustentavel` (usa congestionamento atual) | Sob demanda, quando o usuário pede rota/alternativa |
+
 ## Segurança, backup e monitoramento
 
 - Roles de menor privilégio: `role_app`, `role_analista`, `role_admin_dados` (`05_security.sql`).

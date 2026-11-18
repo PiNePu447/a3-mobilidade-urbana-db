@@ -1,7 +1,31 @@
 -- =============================================================================
--- 06_seed.sql – Dados de teste realistas (São Paulo) – fictícios, claramente fake
--- Fatores de emissão e fontes EXATAMENTE como em docs/normalizacao.md
+-- 06_seed.sql – Dados de teste realistas (São Paulo)
 -- Geometrias: SRID 4326 com axis-order=long-lat
+--
+-- ORIGEM DOS DADOS (seed vs. produção)
+-- -----------------------------------------------------------------------------
+-- ATENÇÃO: este seed é FICTÍCIO/SIMULADO (pessoas, viagens, leituras, traçados
+-- simplificados; nomes claramente fake). Exceção: fator_emissao e
+-- fonte_referencia usam valores e URLs REAIS (docs/normalizacao.md).
+--
+-- Tabela              | Fonte real                         | Ingestão / frequência
+-- --------------------|------------------------------------|---------------------------
+-- modal_transporte    | Catálogo do produto                | Inicial + sob demanda
+-- fonte_referencia    | Metrô-SP, CETESB, MCTI/SIRENE,     | ETL sob novo inventário
+--                     | UK DESNZ                           | (anual / sob demanda)
+-- fator_emissao       | Idem (valores oficiais/estimados)  | ETL versionado (vigência)
+-- usuario             | App (cadastro)                     | Tempo real (API)
+-- local               | OpenStreetMap / GeoSampa           | Batch diário/semanal
+-- segmento_via        | OpenStreetMap / GeoSampa           | Batch semanal/mensal
+-- sensor              | Cadastro CET-SP / operadoras       | Inicial + sob demanda
+-- leitura_trafego     | Sensores CET-SP; GPS ônibus via    | Quase tempo real
+--                     | API Olho Vivo SPTrans              | (https://www.sptrans.com.br/desenvolvedores/)
+-- linha_transporte    | GTFS SPTrans + dados abertos       | Batch diário (GTFS)
+--                     | Metrô-SP / CPTM                    |
+-- viagem              | App (início/fim)                   | Tempo real (API)
+-- trecho_viagem       | App + GPS do dispositivo           | Tempo real na viagem
+-- trecho_segmento     | Matching GPS × malha viária        | Near-real-time pós-trecho
+-- sugestao_modal      | sp_gerar_sugestao_sustentavel      | Sob demanda (procedure)
 -- =============================================================================
 
 USE mobilidade_urbana;
