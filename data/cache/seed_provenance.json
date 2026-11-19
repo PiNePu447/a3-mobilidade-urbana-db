@@ -147,6 +147,18 @@
   ],
   "sources": {
     "gtfs": "https://www.sptrans.com.br/desenvolvedores/ (BaixarGTFS; cadastro). Espelho usado: Mobility Database mdb-8 / GCS mdb-latest.",
-    "osm": "https://www.openstreetmap.org/copyright (ODbL 1.0)"
-  }
+    "osm": "https://www.openstreetmap.org/copyright (ODbL 1.0)",
+    "olhovivo": {
+      "api": "https://api.olhovivo.sptrans.com.br/v2.1",
+      "endpoint": "GET /Posicao",
+      "window_america_sao_paulo": "2026-11-19 08:33–09:17",
+      "token_env": "SPTRANS_OLHOVIVO_TOKEN",
+      "sql": "fontes/olhovivo/leitura_trafego_real.sql",
+      "method": "fontes/olhovivo/METODO.md",
+      "notes": "velocidade de ônibus (com paradas); volume=nº ônibus; nivel derivado; sensores 9–10 inativos (Marginal)"
+    }
+  },
+  "n_sensores": 10,
+  "n_leituras_trafego": 59,
+  "sensor_leitura_source": "fontes/olhovivo/leitura_trafego_real.sql"
 }

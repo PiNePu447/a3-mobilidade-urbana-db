@@ -38,6 +38,7 @@ CACHE = ROOT / "data" / "cache"
 OUT_SQL = ROOT / "sql" / "06_seed.sql"
 GTFS_DIR = CACHE / "gtfs_sptrans"
 GTFS_ZIP = CACHE / "sptrans_gtfs.zip"
+OLHOVIVO_SQL = ROOT / "fontes" / "olhovivo" / "leitura_trafego_real.sql"
 
 # Espelho público (sem login). Produtor oficial: SPTrans BaixarGTFS (requer cadastro).
 GTFS_GCS_LIST = (
@@ -162,6 +163,24 @@ def sql_str(s: str | None) -> str:
     if s is None:
         return "NULL"
     return "'" + s.replace("\\", "\\\\").replace("'", "''") + "'"
+
+
+def extract_olhovivo_seed_body(path: Path) -> str:
+    """Extrai INSERT sensor/leitura de leitura_trafego_real.sql (sem USE/TRUNCATE)."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if line.startswith("-- -----------------------------------------------------------------------------") and "sensor" in line.lower():
+            start = i
+            break
+    if start is None:
+        for i, line in enumerate(lines):
+            if line.startswith("INSERT INTO sensor"):
+                start = i
+                break
+    if start is None:
+        raise RuntimeError(f"Bloco sensor não encontrado em {path}")
+    return "\n".join(lines[start:]).rstrip() + "\n"
 
 
 def sql_point(lon: float, lat: float) -> str:
@@ -589,53 +608,12 @@ def build_seed() -> str:
     if len(segmentos) < 5:
         raise SystemExit(f"Poucos segmentos OSM obtidos: {len(segmentos)}")
 
-    # --- sensores + leituras simuladas em segmentos reais ---
-    sensores = []
-    leituras = []
-    leitura_id = 1
-    for i, seg in enumerate(segmentos, start=1):
-        mid = seg["coords"][len(seg["coords"]) // 2]
-        tipo = ["camera", "laco", "gps_frota"][(i - 1) % 3]
-        status = "ativo" if i != len(segmentos) else "manutencao"
-        sensores.append(
-            {
-                "id_sensor": i,
-                "id_segmento": seg["id_segmento"],
-                "tipo": tipo,
-                "lon": mid[0],
-                "lat": mid[1],
-                "instalado_em": "2023-03-15",
-                "status": status,
-            }
-        )
-        if status != "ativo":
-            leituras.append(
-                {
-                    "id_sensor": i,
-                    "registrado_em": "2026-11-10 08:00:00.000",
-                    "vel": round(seg["velocidade_max_kmh"] * 0.6, 1),
-                    "vol": 800,
-                    "nivel": 1,
-                }
-            )
-            continue
-        # perfil de congestionamento sintético mas ancorado no limite real
-        vmax = seg["velocidade_max_kmh"]
-        samples = [
-            ("2026-11-18 11:00:00.000", 0.35, 4),
-            ("2026-11-18 11:05:00.000", 0.28, 5 if vmax <= 60 else 4),
-            ("2026-11-18 12:00:00.000", 0.50, 3),
-        ]
-        for ts, frac, nivel in samples:
-            leituras.append(
-                {
-                    "id_sensor": i,
-                    "registrado_em": ts,
-                    "vel": round(max(5.0, vmax * frac), 1),
-                    "vol": 200 + i * 40 + nivel * 30,
-                    "nivel": nivel,
-                }
-            )
+    # sensor + leitura_trafego: NÃO regenerar simulados.
+    # Fonte real: fontes/olhovivo/leitura_trafego_real.sql (Olho Vivo 19/11/2026).
+    # Se os segmentos OSM mudarem, rode scripts/processar_olhovivo.py de novo.
+    if not OLHOVIVO_SQL.exists():
+        raise SystemExit(f"Arquivo Olho Vivo ausente: {OLHOVIVO_SQL}")
+    olho_body = extract_olhovivo_seed_body(OLHOVIVO_SQL)
 
     # --- usuários / viagens simulados sobre locais/linhas reais ---
     # Escolhe locais por nome quando possível
@@ -766,16 +744,16 @@ def build_seed() -> str:
 
     w("-- =============================================================================")
     w("-- 06_seed.sql – GERADO por scripts/importar_dados_reais.py")
-    w("-- NÃO editar à mão para dados de rede; regenere o script Python.")
-    w(f"-- Acesso/geração (UTC): {accessed}")
+    w("-- Rede (GTFS/OSM): este script. sensor/leitura: fontes/olhovivo/leitura_trafego_real.sql")
+    w(f"-- Acesso/geração GTFS/OSM (UTC): {accessed}; Olho Vivo: 2026-11-19")
     w("-- Geometrias: SRID 4326 com axis-order=long-lat")
     w("--")
     w("-- ORIGEM DOS DADOS (real vs simulado)")
     w("-- -----------------------------------------------------------------------------")
     w("-- REAL:")
-    w(f"--   linha_transporte (+ geom_trajeto), local (paradas/estações): GTFS SPTrans")
+    w("--   linha_transporte (+ geom_trajeto), local (paradas/estações): GTFS SPTrans")
     w(f"--     Produtor: {GTFS_OFFICIAL_NOTE}")
-    w(f"--     Espelho baixado: GCS mdb-latest (Mobility Database mdb-8)")
+    w("--     Espelho baixado: GCS mdb-latest (Mobility Database mdb-8)")
     w(f"--     Arquivo local: data/cache/sptrans_gtfs.zip sha256[:16]={gtfs_sha}")
     w("--     Inclui Metrô e CPTM no mesmo feed (route_type 1 e 2).")
     w("--   segmento_via: OpenStreetMap (Nominatim + API 0.6 way/full) — ODbL 1.0")
@@ -783,14 +761,17 @@ def build_seed() -> str:
     w("--     Corredores: Paulista, Rebouças, Consolação, 23 de Maio, Marginal Pinheiros")
     w("--   fator_emissao / fonte_referencia: valores REAIS (docs/normalizacao.md)")
     w("--     Metrô-SP, MCTI/SIRENE, UK DESNZ")
+    w("--   sensor / leitura_trafego: SPTrans Olho Vivo API v2.1 GET /Posicao")
+    w("--     https://api.olhovivo.sptrans.com.br/v2.1 | token só em SPTRANS_OLHOVIVO_TOKEN")
+    w("--     Janela 19/11/2026 08:33–09:17 America/Sao_Paulo; 59 leituras; gps_frota;")
+    w("--     sensores 9–10 inativos (Marginal sem cobertura SPTrans).")
+    w("--     Caveats: v de ônibus (com paradas); volume = nº ônibus; nivel DERIVADO.")
+    w("--     Inclusão: fontes/olhovivo/leitura_trafego_real.sql (não regenerar aqui).")
     w("--")
-    w("-- SIMULADO (sem fonte pública utilizável / LGPD):")
-    w("--   sensor / leitura_trafego: derivados dos segmentos OSM reais; leituras")
-    w("--     sintéticas (CET-SP lentidão e Olho Vivo SPTrans exigem token/endpoints")
-    w("--     indisponíveis sem cadastro nesta execução).")
+    w("-- SIMULADO (LGPD / domínio interno):")
     w("--   usuario / viagem / trecho_viagem / trecho_segmento / sugestao_modal:")
-    w("--     pessoas fictícias (LGPD); viagens/sugestões ancoradas em locais/linhas/")
-    w("--     segmentos reais; distancia_km via haversine entre coordenadas reais.")
+    w("--     pessoas fictícias; viagens/sugestões ancoradas em locais/linhas/segmentos reais;")
+    w("--     distancia_km via haversine entre coordenadas reais.")
     w("--   modal_transporte: catálogo interno do produto.")
     w("-- =============================================================================")
     w("")
@@ -887,29 +868,8 @@ def build_seed() -> str:
     w(",\n".join(seg_rows) + ";")
     w("")
 
-    w("-- -----------------------------------------------------------------------------")
-    w("-- sensor — SIMULADO (posição no ponto médio de segmento OSM real)")
-    w("-- -----------------------------------------------------------------------------")
-    w("INSERT INTO sensor (id_sensor, id_segmento, tipo, geom, instalado_em, status) VALUES")
-    sen_rows = []
-    for s in sensores:
-        sen_rows.append(
-            f"({s['id_sensor']}, {s['id_segmento']}, {sql_str(s['tipo'])}, "
-            f"{sql_point(s['lon'], s['lat'])}, {sql_str(s['instalado_em'])}, {sql_str(s['status'])})"
-        )
-    w(",\n".join(sen_rows) + ";")
-    w("")
-
-    w("-- -----------------------------------------------------------------------------")
-    w("-- leitura_trafego — SIMULADO (ancoradas em sensores/segmentos reais)")
-    w("-- -----------------------------------------------------------------------------")
-    w("INSERT INTO leitura_trafego (id_sensor, registrado_em, velocidade_media_kmh, volume_veiculos, nivel_congestionamento) VALUES")
-    lei_rows = []
-    for L in leituras:
-        lei_rows.append(
-            f"({L['id_sensor']}, {sql_str(L['registrado_em'])}, {L['vel']}, {L['vol']}, {L['nivel']})"
-        )
-    w(",\n".join(lei_rows) + ";")
+    # sensor + leitura_trafego reais (Olho Vivo) — corpo embutido do arquivo fonte
+    w(olho_body.rstrip())
     w("")
 
     w("-- -----------------------------------------------------------------------------")
@@ -1021,9 +981,21 @@ def build_seed() -> str:
             for L in linhas
         ],
         "segmentos_osm_way_ids": [s["osm_way_id"] for s in segmentos],
+        "n_sensores": 10,
+        "n_leituras_trafego": 59,
+        "sensor_leitura_source": "fontes/olhovivo/leitura_trafego_real.sql",
         "sources": {
             "gtfs": GTFS_OFFICIAL_NOTE,
             "osm": "https://www.openstreetmap.org/copyright (ODbL 1.0)",
+            "olhovivo": {
+                "api": "https://api.olhovivo.sptrans.com.br/v2.1",
+                "endpoint": "GET /Posicao",
+                "window_america_sao_paulo": "2026-11-19 08:33–09:17",
+                "token_env": "SPTRANS_OLHOVIVO_TOKEN",
+                "sql": "fontes/olhovivo/leitura_trafego_real.sql",
+                "method": "fontes/olhovivo/METODO.md",
+                "notes": "velocidade de ônibus (com paradas); volume=nº ônibus; nivel derivado; sensores 9–10 inativos (Marginal)",
+            },
         },
     }
     (CACHE / "seed_provenance.json").write_text(

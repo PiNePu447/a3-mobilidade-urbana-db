@@ -6,8 +6,12 @@ Entradas : raw/posicao_*.json.gz  +  sql/06_seed.sql (geometria OSM de segmento_
 Saídas   : leitura_trafego_real.sql, resumo.json (estatísticas p/ o relatório)
 Não usa token nem rede.
 
-Uso: python3 processar_olhovivo.py <caminho/06_seed.sql> [raw_dir] [janela_min=5]
+Uso:
+  python3 scripts/processar_olhovivo.py sql/06_seed.sql fontes/olhovivo/raw 5
+Saídas escritas em fontes/olhovivo/ (leitura_trafego_real.sql, resumo.json).
 """
+from pathlib import Path as _Path
+_OUT_DIR = _Path(__file__).resolve().parents[1] / "fontes" / "olhovivo"
 import sys, os, re, glob, gzip, json, math, datetime, statistics
 from collections import defaultdict
 from zoneinfo import ZoneInfo
@@ -156,7 +160,7 @@ json.dump(dict(snapshots=len(files), snapshots_nulos=nulos, ini=t_ini.isoformat(
                posicoes_unicas=len(uniq), posicoes_unicas_janela=uniq_win, veiculos=len(por_veic),
                janela_min=JAN_MIN, buffer_m=BUFFER_M, sensores=resumo,
                descartes={f"{k[0]}:{k[1]}": n for k, n in descart.items()}),
-          open("resumo.json", "w"), indent=1, ensure_ascii=False, default=str)
+          open(_OUT_DIR / "resumo.json", "w"), indent=1, ensure_ascii=False, default=str)
 
 # ---------- SQL ----------
 fmt = lambda t: t.astimezone(SP).strftime("%d/%m/%Y %H:%M")
@@ -228,7 +232,7 @@ if vals:
     for i, (v, c) in enumerate(vals):
         o.append(v + ("," if i < len(vals) - 1 else ";") + "  " + c)
 o.append("")
-open("leitura_trafego_real.sql", "w", encoding="utf-8").write("\n".join(o) + "\n")
-print(json.dumps({k: v for k, v in json.load(open("resumo.json")).items() if k != "sensores"}, ensure_ascii=False))
+open(_OUT_DIR / "leitura_trafego_real.sql", "w", encoding="utf-8").write("\n".join(o) + "\n")
+print(json.dumps({k: v for k, v in json.load(open(_OUT_DIR / "resumo.json")).items() if k != "sensores"}, ensure_ascii=False))
 for k, v in resumo.items():
     print(k, v["nome"][:40], "L=", v["comprimento_m"], "buf=", v["posicoes_no_buffer"], "pares=", v["pares_validos"], "veic=", v["veiculos"], "leit=", v["leituras"], "v=", v["vel_media_kmh"], v["linhas"][:6])

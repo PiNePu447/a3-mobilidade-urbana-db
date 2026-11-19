@@ -5,14 +5,14 @@
 - Endpoint usado: `GET /Posicao`, que devolve a posição GPS atual de toda a frota de ônibus municipal (prefixo do veículo `p`, hora GPS `ta` em UTC, `py`/`px` em WGS84 e linha `c`).
 - Autenticação: `POST /Login/Autenticar?token=…`, com o cookie de sessão. O token fica **só** na variável de ambiente `SPTRANS_OLHOVIVO_TOKEN`. Ele não aparece em nenhum arquivo, log ou commit.
 
-## Coleta (`coletar_posicoes.py`)
+## Coleta (`scripts/coletar_posicoes.py`)
 - **Data:** 19/11/2026, horário de Brasília (America/Sao_Paulo, UTC−3).
 - **Blocos de coleta:** 08:33:49–08:45:21, 08:52:06–08:58:36 e 09:05:47–09:17:18. O processo de coleta parou duas vezes, sem relação com a API, e foi reiniciado.
 - **Snapshots:** 62, um a cada ~30 s. Um deles veio como `null` (falha transitória da API) e foi descartado, ficando 61 válidos.
 - **Volume:** 697.315 posições brutas, ou 500.263 únicas pelo par (veículo, hora GPS), de 11.835 ônibus.
 - Os brutos estão em `raw/posicao_AAAAMMDDTHHMMSS-0300.json.gz` (~14 MB), sem nenhuma alteração.
 
-## Processamento (`processar_olhovivo.py`)
+## Processamento (`scripts/processar_olhovivo.py`)
 1. **Segmentos:** usamos os 10 `segmento_via` reais do OpenStreetMap (ODbL), lidos do próprio `06_seed.sql`.
 2. **Buffer:** para cada segmento, ficam as posições a até **50 m** do eixo OSM. A distância é calculada ponto–polilinha numa projeção local em metros.
 3. **Velocidade:** usamos pares de posições **consecutivas do mesmo ônibus** (mesmo `p`), com as duas posições no buffer e Δt entre 15 e 180 s. A velocidade é `v = distância haversine / Δt`. São descartados:
@@ -58,7 +58,9 @@ São **59 leituras reais** no total, contra 28 simuladas antes.
 
 ## Reproduzir
 ```bash
-export SPTRANS_OLHOVIVO_TOKEN=...            # nunca versionar
-python3 coletar_posicoes.py 15 30 raw        # duração (min), intervalo (s), pasta
-python3 processar_olhovivo.py ../../repo/sql/06_seed.sql raw 5
+export SPTRANS_OLHOVIVO_TOKEN=...   # nunca versionar; ver .env.example
+mkdir -p fontes/olhovivo/raw
+python3 scripts/coletar_posicoes.py 15 30 fontes/olhovivo/raw
+python3 scripts/processar_olhovivo.py sql/06_seed.sql fontes/olhovivo/raw 5
+# depois: incorporar leitura_trafego_real.sql via importar_dados_reais.py (ou splice no 06_seed)
 ```

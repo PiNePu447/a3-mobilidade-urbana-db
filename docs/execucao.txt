@@ -1,13 +1,13 @@
 ================================================================================
 Projeto A3 – Mobilidade Urbana Sustentável
-Execução real em: 2026-11-18T23:59:05Z
+Execução real em: 2026-11-19T12:24:08Z
 Host: cursor
 MySQL: 8.0.46-0ubuntu0.24.04.5
-Seed: GTFS/OSM reais via scripts/importar_dados_reais.py
+Seed: GTFS/OSM + Olho Vivo REAL (59 leituras, 19/11/2026)
 ================================================================================
 
 ################################################################################
-# PASSO 1: sql/script_completo.sql (DROP/CREATE end-to-end)
+# PASSO 1: sql/script_completo.sql
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
 +-------------------------------------------+
@@ -25,7 +25,7 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 | local            | 60 |
 | segmento_via     | 10 |
 | sensor           | 10 |
-| leitura_trafego  | 28 |
+| leitura_trafego  | 59 |
 | linha_transporte | 18 |
 | viagem           |  7 |
 | trecho_viagem    |  8 |
@@ -129,15 +129,14 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
 | id_segmento | nome_via                                          | nivel_congestionamento | velocidade_media_kmh | volume_veiculos | registrado_em           | possui_ciclovia | faixa_onibus |
 +-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
-|           1 | Avenida Paulista [OSM way 261785599]              |                      3 |                 25.0 |             330 | 2026-11-18 12:00:00.000 |               0 |            1 |
-|           2 | Avenida Paulista [OSM way 231341013]              |                      3 |                 25.0 |             370 | 2026-11-18 12:00:00.000 |               0 |            1 |
-|           3 | Avenida Rebouças [OSM way 329094557]              |                      3 |                 25.0 |             410 | 2026-11-18 12:00:00.000 |               1 |            1 |
-|           4 | Avenida Rebouças [OSM way 426510608]              |                      3 |                 25.0 |             450 | 2026-11-18 12:00:00.000 |               1 |            1 |
-|           5 | Rua da Consolação [OSM way 405489974]             |                      3 |                 25.0 |             490 | 2026-11-18 12:00:00.000 |               1 |            1 |
-|           6 | Rua da Consolação [OSM way 935573768]             |                      3 |                 25.0 |             530 | 2026-11-18 12:00:00.000 |               1 |            1 |
-|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                      3 |                 30.0 |             570 | 2026-11-18 12:00:00.000 |               0 |            0 |
-|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                      3 |                 30.0 |             610 | 2026-11-18 12:00:00.000 |               0 |            0 |
-|           9 | Marginal Pinheiros (Expressa) [OSM way 768961582] |                      3 |                 45.0 |             650 | 2026-11-18 12:00:00.000 |               0 |            0 |
+|           1 | Avenida Paulista [OSM way 261785599]              |                      5 |                  4.4 |               4 | 2026-11-19 12:15:00.000 |               0 |            1 |
+|           2 | Avenida Paulista [OSM way 231341013]              |                      4 |                  6.9 |               9 | 2026-11-19 12:10:00.000 |               0 |            1 |
+|           5 | Rua da Consolação [OSM way 405489974]             |                      4 |                  7.0 |               5 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                      3 |                 17.0 |               2 | 2026-11-19 12:15:00.000 |               0 |            0 |
+|           6 | Rua da Consolação [OSM way 935573768]             |                      3 |                 19.4 |               5 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           4 | Avenida Rebouças [OSM way 426510608]              |                      2 |                 22.8 |               4 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                      2 |                 25.1 |               5 | 2026-11-19 12:15:00.000 |               0 |            0 |
+|           3 | Avenida Rebouças [OSM way 329094557]              |                      0 |                 36.5 |               3 | 2026-11-19 12:15:00.000 |               1 |            1 |
 +-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
 +----------------------------------------------+
 | relatorio                                    |
@@ -204,81 +203,55 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 EXIT_CODE_SCRIPT_COMPLETO=0
 
 ################################################################################
-# PASSO 2: Contagens + amostra linhas reais
+# Contagens + ranking congestionamento (#6) + sensores
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
 +------------------+----+
 | t                | n  |
 +------------------+----+
 | usuario          |  5 |
-| modal_transporte |  8 |
-| fonte_referencia |  4 |
-| fator_emissao    |  9 |
 | local            | 60 |
 | segmento_via     | 10 |
 | sensor           | 10 |
-| leitura_trafego  | 28 |
+| leitura_trafego  | 59 |
 | linha_transporte | 18 |
 | viagem           |  8 |
-| trecho_viagem    |  9 |
-| trecho_segmento  |  9 |
 | sugestao_modal   |  5 |
 +------------------+----+
-+----------+---------+----------------------------------------------------------------+---------------------------+----------+
-| id_linha | codigo  | nome                                                           | operadora                 | id_modal |
-+----------+---------+----------------------------------------------------------------+---------------------------+----------+
-|        1 | L1      | METRÔ L1 — TUCURUVI - JABAQUARA                                | Metrô-SP                  |        5 |
-|        2 | L2      | METRÔ L2 — VILA MADALENA - VILA PRUDENTE                       | Metrô-SP                  |        5 |
-|        3 | L3      | METRÔ L3 — CORINTHIANS - ITAQUERA - PALMEIRAS - BARRA FUNDA    | Metrô-SP                  |        5 |
-|        4 | L4      | METRÔ L4 — SÃO PAULO - MORUMBI - LUZ                           | ViaQuatro / Metrô-SP      |        5 |
-|        5 | L5      | METRÔ L5 — CAPAO REDONDO - CHÁCARA KLABIN                      | ViaMobilidade / Metrô-SP  |        5 |
-|        6 | L07     | CPTM L07 — JUNDIAI - LUZ                                       | CPTM                      |        6 |
-|        7 | L08     | CPTM L08 — AMADOR BUENO - JULIO PRESTES                        | CPTM                      |        6 |
-|        8 | L09     | CPTM L09 — VARGINHA - OSASCO                                   | CPTM                      |        6 |
-|        9 | 875A-10 | Aeroporto - Perdizes                                           | SPTrans                   |        4 |
-|       10 | 702U-22 | Metrô Butantã - Term. Pq. D. Pedro Ii                          | SPTrans                   |        4 |
-|       11 | 177Y-10 | Metrô Barra Funda - Pinheiros                                  | SPTrans                   |        4 |
-|       12 | 917H-10 | Term. Pirituba - Metrô Vl. Mariana                             | SPTrans                   |        4 |
-|       13 | 675A-10 | Pq. Sto. Antonio - Metrô São Judas                             | SPTrans                   |        4 |
-|       14 | 509M-10 | Jd. Miriam - Term. Princ. Isabel                               | SPTrans                   |        4 |
-|       15 | 5154-10 | Term. Sto. Amaro - Term. Princ. Isabel                         | SPTrans                   |        4 |
-|       16 | 107T-10 | Metrô Tucuruvi - Term. Pinheiros                               | SPTrans                   |        4 |
-|       17 | 930P-10 | Term. Pq. D. Pedro Ii - Term. Pinheiros                        | SPTrans                   |        4 |
-|       18 | 2002-10 | Term. Pq. D. Pedro Ii - Term. Bandeira                         | SPTrans                   |        4 |
-+----------+---------+----------------------------------------------------------------+---------------------------+----------+
-+-------------+---------------------------------------------------+--------------------+-----------------+--------------+
-| id_segmento | nome_via                                          | velocidade_max_kmh | possui_ciclovia | faixa_onibus |
-+-------------+---------------------------------------------------+--------------------+-----------------+--------------+
-|           1 | Avenida Paulista [OSM way 261785599]              |                 50 |               0 |            1 |
-|           2 | Avenida Paulista [OSM way 231341013]              |                 50 |               0 |            1 |
-|           3 | Avenida Rebouças [OSM way 329094557]              |                 50 |               1 |            1 |
-|           4 | Avenida Rebouças [OSM way 426510608]              |                 50 |               1 |            1 |
-|           5 | Rua da Consolação [OSM way 405489974]             |                 50 |               1 |            1 |
-|           6 | Rua da Consolação [OSM way 935573768]             |                 50 |               1 |            1 |
-|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                 60 |               0 |            0 |
-|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                 60 |               0 |            0 |
-|           9 | Marginal Pinheiros (Expressa) [OSM way 768961582] |                 90 |               0 |            0 |
-|          10 | Marginal Pinheiros (Expressa) [OSM way 96085719]  |                 90 |               1 |            0 |
-+-------------+---------------------------------------------------+--------------------+-----------------+--------------+
-+----------+-------------------------+--------------+------------+------------+
-| id_local | nome                    | tipo         | lon        | lat        |
-+----------+-------------------------+--------------+------------+------------+
-|        1 | Sé                      | estacao      | -46.633305 |   -23.5505 |
-|        2 | Paulista                | estacao      | -46.662131 | -23.555071 |
-|        3 | Consolação              | estacao      | -46.660205 | -23.558094 |
-|        4 | Pinheiros               | estacao      | -46.703082 | -23.566631 |
-|        5 | Luz                     | estacao      |   -46.6343 |   -23.5366 |
-|        6 | República               | estacao      | -46.642461 | -23.544215 |
-|        7 | Ana Rosa                | estacao      | -46.638489 | -23.581203 |
-|        8 | Tucuruvi                | estacao      | -46.603209 | -23.480049 |
-|        9 | Jabaquara               | estacao      | -46.641028 | -23.646033 |
-|       10 | Vila Madalena           | estacao      | -46.691141 | -23.546498 |
-|       11 | Vila Prudente           | estacao      | -46.581943 | -23.584447 |
-|       12 | Palmeiras - Barra Funda | ponto_onibus | -46.666547 | -23.525317 |
-+----------+-------------------------+--------------+------------+------------+
++-----------+-------------+-----------+---------+--------------+
+| id_sensor | id_segmento | tipo      | status  | instalado_em |
++-----------+-------------+-----------+---------+--------------+
+|         1 |           1 | gps_frota | ativo   | 2026-11-19   |
+|         2 |           2 | gps_frota | ativo   | 2026-11-19   |
+|         3 |           3 | gps_frota | ativo   | 2026-11-19   |
+|         4 |           4 | gps_frota | ativo   | 2026-11-19   |
+|         5 |           5 | gps_frota | ativo   | 2026-11-19   |
+|         6 |           6 | gps_frota | ativo   | 2026-11-19   |
+|         7 |           7 | gps_frota | ativo   | 2026-11-19   |
+|         8 |           8 | gps_frota | ativo   | 2026-11-19   |
+|         9 |           9 | gps_frota | inativo | 2026-11-19   |
+|        10 |          10 | gps_frota | inativo | 2026-11-19   |
++-----------+-------------+-----------+---------+--------------+
++----------------------------------------------+
+| relatorio                                    |
++----------------------------------------------+
+| === 6) Ranking de congestionamento atual === |
++----------------------------------------------+
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
+| id_segmento | nome_via                                          | nivel_congestionamento | velocidade_media_kmh | volume_veiculos | registrado_em           | possui_ciclovia | faixa_onibus |
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
+|           1 | Avenida Paulista [OSM way 261785599]              |                      5 |                  4.4 |               4 | 2026-11-19 12:15:00.000 |               0 |            1 |
+|           2 | Avenida Paulista [OSM way 231341013]              |                      4 |                  6.9 |               9 | 2026-11-19 12:10:00.000 |               0 |            1 |
+|           5 | Rua da Consolação [OSM way 405489974]             |                      4 |                  7.0 |               5 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           8 | Avenida Vinte e Três de Maio [OSM way 286269721]  |                      3 |                 17.0 |               2 | 2026-11-19 12:15:00.000 |               0 |            0 |
+|           6 | Rua da Consolação [OSM way 935573768]             |                      3 |                 19.4 |               5 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           4 | Avenida Rebouças [OSM way 426510608]              |                      2 |                 22.8 |               4 | 2026-11-19 12:15:00.000 |               1 |            1 |
+|           7 | Avenida Vinte e Três de Maio [OSM way 241249687]  |                      2 |                 25.1 |               5 | 2026-11-19 12:15:00.000 |               0 |            0 |
+|           3 | Avenida Rebouças [OSM way 329094557]              |                      0 |                 36.5 |               3 | 2026-11-19 12:15:00.000 |               1 |            1 |
++-------------+---------------------------------------------------+------------------------+----------------------+-----------------+-------------------------+-----------------+--------------+
 
 ################################################################################
-# PASSO 3: scripts numerados (run_all) em DB limpo
+# PASSO 2: run_all.sh (DB limpo)
 ################################################################################
 mysql: [Warning] Using a password on the command line interface can be insecure.
 ==> MySQL target: root@127.0.0.1:3306
@@ -306,7 +279,7 @@ fator_emissao	9
 local	60
 segmento_via	10
 sensor	10
-leitura_trafego	28
+leitura_trafego	59
 linha_transporte	18
 viagem	7
 trecho_viagem	8
@@ -376,15 +349,14 @@ id_usuario	nome_usuario	ano_mes	qtd_viagens	distancia_km	co2_emitido_g	co2_se_ca
 relatorio
 === 6) Ranking de congestionamento atual ===
 id_segmento	nome_via	nivel_congestionamento	velocidade_media_kmh	volume_veiculos	registrado_em	possui_ciclovia	faixa_onibus
-1	Avenida Paulista [OSM way 261785599]	3	25.0	330	2026-11-18 12:00:00.000	0	1
-2	Avenida Paulista [OSM way 231341013]	3	25.0	370	2026-11-18 12:00:00.000	0	1
-3	Avenida Rebouças [OSM way 329094557]	3	25.0	410	2026-11-18 12:00:00.000	1	1
-4	Avenida Rebouças [OSM way 426510608]	3	25.0	450	2026-11-18 12:00:00.000	1	1
-5	Rua da Consolação [OSM way 405489974]	3	25.0	490	2026-11-18 12:00:00.000	1	1
-6	Rua da Consolação [OSM way 935573768]	3	25.0	530	2026-11-18 12:00:00.000	1	1
-7	Avenida Vinte e Três de Maio [OSM way 241249687]	3	30.0	570	2026-11-18 12:00:00.000	0	0
-8	Avenida Vinte e Três de Maio [OSM way 286269721]	3	30.0	610	2026-11-18 12:00:00.000	0	0
-9	Marginal Pinheiros (Expressa) [OSM way 768961582]	3	45.0	650	2026-11-18 12:00:00.000	0	0
+1	Avenida Paulista [OSM way 261785599]	5	4.4	4	2026-11-19 12:15:00.000	0	1
+2	Avenida Paulista [OSM way 231341013]	4	6.9	9	2026-11-19 12:10:00.000	0	1
+5	Rua da Consolação [OSM way 405489974]	4	7.0	5	2026-11-19 12:15:00.000	1	1
+8	Avenida Vinte e Três de Maio [OSM way 286269721]	3	17.0	2	2026-11-19 12:15:00.000	0	0
+6	Rua da Consolação [OSM way 935573768]	3	19.4	5	2026-11-19 12:15:00.000	1	1
+4	Avenida Rebouças [OSM way 426510608]	2	22.8	4	2026-11-19 12:15:00.000	1	1
+7	Avenida Vinte e Três de Maio [OSM way 241249687]	2	25.1	5	2026-11-19 12:15:00.000	0	0
+3	Avenida Rebouças [OSM way 329094557]	0	36.5	3	2026-11-19 12:15:00.000	1	1
 relatorio
 === 7) Taxa de aceitação de sugestões ===
 total_sugestoes	aceitas	recusadas	sem_resposta	taxa_aceitacao_pct
