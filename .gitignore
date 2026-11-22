@@ -1,0 +1,10 @@
+backups/
+*.sql.gz
+.DS_Store
+.env
+*.log
+data/cache/*.zip
+data/cache/gtfs_sptrans/
+data/cache/osm_way_*.json
+data/cache/nominatim_*.json
+!data/cache/seed_provenance.json
